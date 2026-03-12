@@ -4,15 +4,18 @@ import React, { useEffect, useState } from "react";
 import { LanguageSelectorProps } from "./types";
 import { setLocaleCookie } from "./utils";
 
-export const LanguageSelector = ({
-  locales,
-  defaultLocale,
-  cookieName = "NEXT_LOCALE",
-  isDropdown = true,
-  renderCustom,
-  className,
-  activeColor = "red",
-}: LanguageSelectorProps): React.JSX.Element => {
+export function LanguageSelector(
+  props: LanguageSelectorProps,
+): React.JSX.Element {
+  const {
+    locales,
+    defaultLocale,
+    cookieName = "NEXT_LOCALE",
+    isDropdown = true,
+    renderCustom,
+    className,
+    activeColor = "red",
+  } = props;
   const [current, setCurrent] = useState(defaultLocale);
 
   useEffect(() => {
@@ -84,4 +87,4 @@ export const LanguageSelector = ({
       ))}
     </select>
   );
-};
+}

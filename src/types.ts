@@ -9,7 +9,7 @@ export interface LocaleConfig {
 export interface LanguageSelectorProps {
   locales: LocaleConfig[];
   defaultLocale: string;
-  isDropdown: boolean;
+  isDropdown?: boolean;
   cookieName?: string;
   activeColor?: string;
   className?: string;

@@ -1,3 +1,11 @@
-export { LanguageSelector } from "./selector";
-export { setLocaleCookie } from "./utils";
-export type { LanguageSelectorProps, LocaleConfig } from "./types";
+import React from "react";
+import { LanguageSelector as Component } from "./selector";
+import { setLocaleCookie } from "./utils";
+import type { LanguageSelectorProps, LocaleConfig } from "./types";
+
+export const LanguageSelector: (
+  props: LanguageSelectorProps,
+) => React.JSX.Element = Component;
+
+export { setLocaleCookie };
+export type { LanguageSelectorProps, LocaleConfig };
