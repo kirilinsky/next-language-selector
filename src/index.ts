@@ -1,5 +1,3 @@
-import { LanguageSelector } from "./selector";
-import { setLocaleCookie } from "./utils";
-
-export { LanguageSelector, setLocaleCookie };
+export { LanguageSelector } from "./selector";
+export { setLocaleCookie } from "./utils";
 export type { LanguageSelectorProps, LocaleConfig } from "./types";
