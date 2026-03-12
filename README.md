@@ -36,7 +36,7 @@ export default function Footer() {
       <LanguageSelector
         locales={locales}
         defaultLocale="en"
-        activeColor="#3b82f6"
+        activeColor="#3b82f6" // optional
         isDropdown={false} // Renders as a list of buttons
       />
     </footer>
@@ -96,7 +96,8 @@ export default createMiddleware({
 | :-------------- | :--------------- | :------------ | :---------------------------------------------------------- |
 | `locales`       | `LocaleConfig[]` | **Required**  | Array of `{ name, code, flag }` objects                     |
 | `defaultLocale` | `string`         | **Required**  | Initial language code                                       |
-| `isDropdown`    | `boolean`        | `true`        | Toggle between `<select>` and a list of buttons             |
+| `isDropdown`    | `boolean`        | `false`       | Toggle between `<select>` and a list of buttons             |
+| `autoReload`    | `boolean`        | `true`        | Trigger reload on cookie change                             |
 | `cookieName`    | `string`         | `NEXT_LOCALE` | Name of the cookie to store the selected language           |
 | `activeColor`   | `string`         | `red`         | Underline color for the active language (non-dropdown mode) |
 | `className`     | `string`         | -             | CSS class for the wrapper element                           |
