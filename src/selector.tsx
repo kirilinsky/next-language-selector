@@ -11,7 +11,8 @@ export function LanguageSelector(
     locales,
     defaultLocale,
     cookieName = "NEXT_LOCALE",
-    isDropdown = true,
+    isDropdown = false,
+    autoReload = true,
     renderCustom,
     className,
     activeColor = "red",
@@ -29,7 +30,7 @@ export function LanguageSelector(
 
   const handleSelect = (code: string) => {
     setCurrent(code);
-    setLocaleCookie(code, cookieName);
+    setLocaleCookie(code, cookieName, autoReload);
   };
 
   if (renderCustom) {

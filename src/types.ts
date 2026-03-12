@@ -13,6 +13,7 @@ export interface LanguageSelectorProps {
   cookieName?: string;
   activeColor?: string;
   className?: string;
+  autoReload?: boolean;
   renderCustom?: (props: {
     locales: LocaleConfig[];
     currentLocale: string;
