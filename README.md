@@ -1,5 +1,10 @@
 # next-language-selector
 
+![npm version](https://img.shields.io/npm/v/next-language-selector?color=3178C6&style=flat-square)
+![bundle size](https://img.shields.io/bundlephobia/minzip/next-language-selector?color=black&style=flat-square)
+![security score](https://socket.dev/api/badge/npm/package/next-language-selector?style=flat-square)
+![license](https://img.shields.io/npm/l/next-language-selector?color=gray&style=flat-square)
+
 A lightweight, configurable language selector for Next.js (App Router & Pages Router).  
 Efficiently manages the `NEXT_LOCALE` cookie and works seamlessly with `next-intl` or any other i18n solution.
 

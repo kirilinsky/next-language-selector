@@ -1,14 +1,27 @@
 src/
+stories/
+demo/
+__tests__/
+*.test.tsx
+*.spec.tsx
 
+.ladle/
+.github/
+.vscode/
+.husky/
+.babelrc
+webpack.config.js
 tsconfig.json
 tsup.config.ts
-pnpm-lock.yaml
-.npmignore
-.gitignore
- 
-tests/
-vitest.config.ts
+.eslintrc*
+.prettier*
 
+npm-debug.log*
+yarn-error.log*
+yarn.lock
+package-lock.json
 node_modules/
-*.log
-.DS_Store
+
+.gitignore
+.npmignore
+CONTRIBUTING.md
