@@ -1,6 +1,6 @@
 {
   "name": "next-language-selector",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Configurable language selector for Next.js",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
