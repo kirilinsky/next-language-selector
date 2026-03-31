@@ -5,15 +5,16 @@
 ![security score](https://socket.dev/api/badge/npm/package/next-language-selector?style=flat-square)
 ![license](https://img.shields.io/npm/l/next-language-selector?color=gray&style=flat-square)
 
-A lightweight, configurable language selector for Next.js (App Router & Pages Router).  
-Efficiently manages the `NEXT_LOCALE` cookie and works seamlessly with `next-intl` or any other i18n solution.
+A lightweight, unstyled language selector for Next.js (App Router & Pages Router).  
+Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution.
 
 ## Key Features
 
-- 🚀 **Next.js Native**: Built specifically for the Next.js ecosystem.
-- 🪶 **Zero Dependencies**: Keeps your bundle size minimal.
-- 🎨 **Fully Customizable**: Use built-in styles or your own UI (Shadcn UI, Radix, etc.) via render props.
-- 🍪 **Cookie-based**: Automatically syncs with the `NEXT_LOCALE` cookie.
+- **Next.js Native**: Built for the Next.js ecosystem (App Router & Pages Router).
+- **Zero Dependencies**: No runtime deps — just React.
+- **Unstyled by default**: Bring your own CSS, Tailwind, Shadcn, Radix — no style conflicts.
+- **Cookie-based**: Reads and writes `NEXT_LOCALE` automatically.
+- **Secure**: Cookie injection-safe, `SameSite=Lax` out of the box.
 
 ## Installation
 
@@ -25,7 +26,7 @@ npm install next-language-selector
 
 ## Basic Usage
 
-Just drop the component into your Footer or Navbar. It handles cookie updates and local state out of the box.
+Drop the component into your Footer or Navbar. It handles cookie sync and state out of the box.
 
 ```tsx
 import { LanguageSelector } from "next-language-selector";
@@ -41,17 +42,55 @@ export default function Footer() {
       <LanguageSelector
         locales={locales}
         defaultLocale="en"
-        activeColor="#3b82f6" // optional
-        isDropdown={false} // Renders as a list of buttons
       />
     </footer>
   );
 }
 ```
 
-## Custom UI (e.g., Shadcn UI / Headless)
+## Styling
 
-Use the `renderCustom` prop to take full control over the rendering while keeping the cookie management logic.
+The component is **unstyled by default**. Use `className` / `itemClassName` props or target the `data-active` attribute:
+
+```css
+/* Plain CSS */
+.lang-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.lang-btn[data-active="true"] {
+  opacity: 1;
+  font-weight: 600;
+  border-bottom: 2px solid currentColor;
+}
+```
+
+```tsx
+<LanguageSelector
+  locales={locales}
+  defaultLocale="en"
+  className="flex gap-2"
+  itemClassName="lang-btn"
+/>
+```
+
+With Tailwind:
+
+```tsx
+<LanguageSelector
+  locales={locales}
+  defaultLocale="en"
+  className="flex items-center gap-3"
+  itemClassName="text-sm text-gray-400 data-[active=true]:text-black data-[active=true]:font-semibold"
+/>
+```
+
+## Custom UI
+
+Use the `renderCustom` prop to take full control over rendering while keeping the cookie logic.
 
 ```tsx
 <LanguageSelector
@@ -63,11 +102,7 @@ Use the `renderCustom` prop to take full control over the rendering while keepin
         <button
           key={lang.code}
           onClick={() => onChange(lang.code)}
-          className={
-            currentLocale === lang.code
-              ? "text-blue-600 font-bold"
-              : "text-gray-500"
-          }
+          className={currentLocale === lang.code ? "font-bold" : "opacity-50"}
         >
           {lang.flag} {lang.name}
         </button>
@@ -77,9 +112,20 @@ Use the `renderCustom` prop to take full control over the rendering while keepin
 />
 ```
 
-## Setup with next-intl (Middleware)
+## Dropdown mode
 
-To make sure Next.js detects the language from the cookie set by this component, update your `middleware.ts` or `proxy.ts`:
+```tsx
+<LanguageSelector
+  locales={locales}
+  defaultLocale="en"
+  isDropdown
+  className="border rounded px-2 py-1"
+/>
+```
+
+## Setup with next-intl
+
+Update your `middleware.ts` to read the cookie set by this component:
 
 ```typescript
 import createMiddleware from "next-intl/middleware";
@@ -90,23 +136,33 @@ export default createMiddleware({
   localeCookie: {
     name: "NEXT_LOCALE",
     path: "/",
-    maxAge: 31536000, // 1 year
+    maxAge: 31536000,
   },
 });
 ```
 
 ## Props
 
-| Prop            | Type             | Default       | Description                                                 |
-| :-------------- | :--------------- | :------------ | :---------------------------------------------------------- |
-| `locales`       | `LocaleConfig[]` | **Required**  | Array of `{ name, code, flag }` objects                     |
-| `defaultLocale` | `string`         | **Required**  | Initial language code                                       |
-| `isDropdown`    | `boolean`        | `false`       | Toggle between `<select>` and a list of buttons             |
-| `autoReload`    | `boolean`        | `true`        | Trigger reload on cookie change                             |
-| `cookieName`    | `string`         | `NEXT_LOCALE` | Name of the cookie to store the selected language           |
-| `activeColor`   | `string`         | `red`         | Underline color for the active language (non-dropdown mode) |
-| `className`     | `string`         | -             | CSS class for the wrapper element                           |
-| `renderCustom`  | `Function`       | -             | Render prop for custom UI logic                             |
+| Prop            | Type             | Default        | Description                                          |
+| :-------------- | :--------------- | :------------- | :--------------------------------------------------- |
+| `locales`       | `LocaleConfig[]` | **Required**   | Array of `{ name, code, flag? }` objects             |
+| `defaultLocale` | `string`         | **Required**   | Fallback locale code                                 |
+| `isDropdown`    | `boolean`        | `false`        | Render as `<select>` instead of buttons              |
+| `autoReload`    | `boolean`        | `true`         | Reload page after cookie change                      |
+| `cookieName`    | `string`         | `NEXT_LOCALE`  | Cookie name to store the selected locale             |
+| `className`     | `string`         | -              | CSS class for the wrapper `<div>` or `<select>`      |
+| `itemClassName` | `string`         | -              | CSS class for each `<button>` or `<option>`          |
+| `renderCustom`  | `Function`       | -              | Render prop for fully custom UI                      |
+
+### `LocaleConfig`
+
+```ts
+interface LocaleConfig {
+  name: string;   // Display name, e.g. "English"
+  code: string;   // Locale code, e.g. "en"
+  flag?: string;  // Optional emoji flag, e.g. "🇺🇸"
+}
+```
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "name": "next-language-selector",
-  "version": "0.2.8",
+  "version": "0.3.0",
   "description": "Configurable language selector for Next.js",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -10,23 +10,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    },
-    "./selector": {
-      "types": "./dist/selector.d.ts",
-      "import": "./dist/selector.mjs",
-      "require": "./dist/selector.cjs"
     }
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "npx vitest run --coverage"
   },
   "files": [
     "dist"
   ],
   "peerDependencies": {
-    "next": "^14.2.35 || ^15.0.0 || ^16.0.0",
+    "next": "^15.0.0 || ^16.0.0",
     "react": "^18.0.0 || ^19.0.0"
   },
   "keywords": [
@@ -50,10 +48,16 @@
     "url": "git+https://github.com/kirilinsky/next-language-selector.git"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
+    "@vitest/coverage-v8": "^4.1.2",
+    "happy-dom": "^20.8.9",
     "tslib": "^2.8.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
   },
   "sideEffects": false
 }

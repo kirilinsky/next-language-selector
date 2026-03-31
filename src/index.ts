@@ -5,7 +5,7 @@ import type { LanguageSelectorProps, LocaleConfig } from "./types";
 
 export const LanguageSelector: (
   props: LanguageSelectorProps,
-) => React.JSX.Element = Component;
+) => React.JSX.Element | null = Component;
 
 export { setLocaleCookie };
 export type { LanguageSelectorProps, LocaleConfig };

@@ -11,8 +11,8 @@ export interface LanguageSelectorProps {
   defaultLocale: string;
   isDropdown?: boolean;
   cookieName?: string;
-  activeColor?: string;
   className?: string;
+  itemClassName?: string;
   autoReload?: boolean;
   renderCustom?: (props: {
     locales: LocaleConfig[];

@@ -5,7 +5,9 @@ export const setLocaleCookie = (
 ) => {
   if (typeof document === "undefined") return;
 
-  document.cookie = `${cookieName}=${locale}; max-age=31536000; path=/`;
+  const safeKey = encodeURIComponent(cookieName);
+  const safeValue = encodeURIComponent(locale);
+  document.cookie = `${safeKey}=${safeValue}; max-age=31536000; path=/; SameSite=Lax`;
   if (autoReload) {
     window.location.reload();
   }

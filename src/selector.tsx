@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { LanguageSelectorProps } from "./types";
 import { setLocaleCookie } from "./utils";
 
 export function LanguageSelector(
   props: LanguageSelectorProps,
-): React.JSX.Element {
+): React.JSX.Element | null {
   const {
     locales,
     defaultLocale,
@@ -15,23 +15,34 @@ export function LanguageSelector(
     autoReload = true,
     renderCustom,
     className,
-    activeColor = "red",
+    itemClassName,
   } = props;
+
+  const [mounted, setMounted] = useState(false);
   const [current, setCurrent] = useState(defaultLocale);
 
   useEffect(() => {
-    const saved = document.cookie
+    const safeKey = encodeURIComponent(cookieName);
+    const raw = document.cookie
       .split("; ")
-      .find((row) => row.startsWith(`${cookieName}=`))
-      ?.split("=")[1];
+      .find((row) => row.startsWith(`${safeKey}=`));
+    const saved = raw
+      ? decodeURIComponent(raw.split("=").slice(1).join("="))
+      : null;
 
     if (saved) setCurrent(saved);
+    setMounted(true);
   }, [cookieName]);
 
-  const handleSelect = (code: string) => {
-    setCurrent(code);
-    setLocaleCookie(code, cookieName, autoReload);
-  };
+  const handleSelect = useCallback(
+    (code: string) => {
+      setCurrent(code);
+      setLocaleCookie(code, cookieName, autoReload);
+    },
+    [cookieName, autoReload],
+  );
+
+  if (!mounted) return null;
 
   if (renderCustom) {
     return (
@@ -47,26 +58,14 @@ export function LanguageSelector(
 
   if (!isDropdown) {
     return (
-      <div
-        style={{ display: "flex", gap: "8px", alignItems: "center" }}
-        className={className}
-      >
+      <div className={className}>
         {locales.map((l) => (
           <button
             key={l.code}
             onClick={() => handleSelect(l.code)}
-            style={{
-              cursor: "pointer",
-              background: "none",
-              border: "none",
-              borderBottom:
-                current === l.code
-                  ? `1px solid ${activeColor}`
-                  : "1px solid transparent",
-              color: current === l.code ? "inherit" : "gray",
-              fontSize: "12px",
-              padding: "2px 4px",
-            }}
+            data-active={current === l.code}
+            aria-pressed={current === l.code}
+            className={itemClassName}
           >
             {l.flag} {l.name}
           </button>
@@ -82,7 +81,7 @@ export function LanguageSelector(
       className={className}
     >
       {locales.map((l) => (
-        <option key={l.code} value={l.code}>
+        <option key={l.code} value={l.code} className={itemClassName}>
           {l.flag} {l.name}
         </option>
       ))}
