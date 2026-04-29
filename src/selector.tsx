@@ -30,9 +30,13 @@ export function LanguageSelector(
       ? decodeURIComponent(raw.split("=").slice(1).join("="))
       : null;
 
-    if (saved) setCurrent(saved);
+    if (saved && locales.some((locale) => locale.code === saved)) {
+      setCurrent(saved);
+    } else {
+      setCurrent(defaultLocale);
+    }
     setMounted(true);
-  }, [cookieName]);
+  }, [cookieName, defaultLocale, locales]);
 
   const handleSelect = useCallback(
     (code: string) => {

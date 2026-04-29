@@ -20,3 +20,5 @@ yarn-error.log*
 /.next/
 /out/
 coverage
+
+plans.md

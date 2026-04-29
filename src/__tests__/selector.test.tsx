@@ -117,6 +117,29 @@ describe("locale initialisation", () => {
       screen.getByRole("button", { name: /français/i }),
     ).toHaveAttribute("data-active", "true");
   });
+
+  it("ignores saved cookie locale when it is not in locales", async () => {
+    setCookie("NEXT_LOCALE", "es");
+    await act(async () => {
+      render(<LanguageSelector locales={locales} defaultLocale="en" />);
+    });
+    expect(
+      screen.getByRole("button", { name: /english/i }),
+    ).toHaveAttribute("data-active", "true");
+    expect(
+      screen.getByRole("button", { name: /deutsch/i }),
+    ).toHaveAttribute("data-active", "false");
+  });
+
+  it("falls back to defaultLocale in dropdown when cookie locale is unsupported", async () => {
+    setCookie("NEXT_LOCALE", "es");
+    await act(async () => {
+      render(
+        <LanguageSelector locales={locales} defaultLocale="en" isDropdown />,
+      );
+    });
+    expect(screen.getByRole("combobox")).toHaveValue("en");
+  });
 });
  
 
