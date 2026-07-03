@@ -14,6 +14,12 @@ export interface LanguageSelectorProps {
   className?: string;
   itemClassName?: string;
   autoReload?: boolean;
+  /**
+   * Called with the selected locale code after the internal state updates,
+   * before the cookie is written (and before the reload when autoReload is on).
+   * Use for analytics, router navigation or other side effects.
+   */
+  onChange?: (code: string) => void;
   renderCustom?: (props: {
     locales: LocaleConfig[];
     currentLocale: string;

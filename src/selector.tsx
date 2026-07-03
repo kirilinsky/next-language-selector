@@ -13,6 +13,7 @@ export function LanguageSelector(
     cookieName = "NEXT_LOCALE",
     isDropdown = false,
     autoReload = true,
+    onChange,
     renderCustom,
     className,
     itemClassName,
@@ -35,9 +36,12 @@ export function LanguageSelector(
   const handleSelect = useCallback(
     (code: string) => {
       setCurrent(code);
+      // before setLocaleCookie: with autoReload the page reloads inside it,
+      // so a callback fired later would never run
+      onChange?.(code);
       setLocaleCookie(code, cookieName, autoReload);
     },
-    [cookieName, autoReload],
+    [cookieName, autoReload, onChange],
   );
 
   if (!mounted) return null;

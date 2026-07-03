@@ -22,3 +22,4 @@ yarn-error.log*
 coverage
 
 plans.md
+dist-demo

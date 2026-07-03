@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>next-language-selector — cookie-based language selector for Next.js</title>
+    <meta
+      name="description"
+      content="Live demo of next-language-selector: a lightweight, unstyled, cookie-based language selector component for Next.js. Buttons, dropdown and fully custom rendering — zero dependencies."
+    />
+    <link rel="canonical" href="https://kirilinsky.github.io/next-language-selector/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f3f0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="next-language-selector — demo" />
+    <meta
+      property="og:description"
+      content="Lightweight, unstyled, cookie-based language selector for Next.js. One component, three ways to render it."
+    />
+    <meta property="og:url" content="https://kirilinsky.github.io/next-language-selector/" />
+    <meta property="og:image" content="https://kirilinsky.github.io/next-language-selector/og.png" />
+    <meta property="og:image:width" content="1440" />
+    <meta property="og:image:height" content="900" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="next-language-selector — demo" />
+    <meta
+      name="twitter:description"
+      content="Lightweight, unstyled, cookie-based language selector for Next.js."
+    />
+    <meta name="twitter:image" content="https://kirilinsky.github.io/next-language-selector/og.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "next-language-selector",
+        "description": "Lightweight, unstyled, cookie-based language selector component for Next.js.",
+        "url": "https://kirilinsky.github.io/next-language-selector/",
+        "codeRepository": "https://github.com/kirilinsky/next-language-selector",
+        "programmingLanguage": "TypeScript",
+        "runtimePlatform": "Next.js",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+          "@type": "Person",
+          "name": "Kirilinsky",
+          "url": "https://github.com/kirilinsky"
+        }
+      }
+    </script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --ink: #101010;
+        --paper: #f4f3f0;
+        --grey: #b5b2ac;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-weight: 300;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* ---- flow lines (background) ---- */
+      .flow {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 clamp(1.25rem, 6vw, 5rem) 6rem;
+      }
+
+      /* ---- hero ---- */
+      header {
+        padding: clamp(4rem, 14vh, 9rem) 0 clamp(3rem, 10vh, 7rem);
+      }
+
+      h1 {
+        font-size: clamp(2.6rem, 9.5vw, 7.5rem);
+        font-weight: 200;
+        line-height: 0.92;
+        letter-spacing: -0.045em;
+        text-transform: uppercase;
+      }
+
+      h1 .outline {
+        color: transparent;
+        -webkit-text-stroke: 1.5px var(--ink);
+      }
+
+      h1 .shift {
+        display: inline-block;
+        transform: translateX(clamp(1rem, 8vw, 6rem));
+      }
+
+      .tagline {
+        margin-top: 2rem;
+        max-width: 34ch;
+        font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+        color: #555;
+        line-height: 1.55;
+      }
+
+      .tagline code {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.9em;
+      }
+
+      /* ---- sections ---- */
+      section {
+        display: grid;
+        grid-template-columns: minmax(4.5rem, 1fr) minmax(0, 4fr);
+        gap: 1rem;
+        align-items: start;
+        padding: clamp(3rem, 9vh, 6rem) 0;
+        border-top: 1px solid var(--ink);
+      }
+
+      section:nth-of-type(even) {
+        margin-left: clamp(0rem, 6vw, 5rem);
+      }
+
+      .num {
+        font-size: clamp(2.2rem, 5vw, 4rem);
+        font-weight: 200;
+        color: transparent;
+        -webkit-text-stroke: 1px var(--grey);
+        line-height: 1;
+      }
+
+      h2 {
+        font-size: clamp(1.2rem, 2.2vw, 1.7rem);
+        font-weight: 300;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-bottom: 0.6rem;
+      }
+
+      .hint {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.78rem;
+        color: #777;
+        margin-bottom: 2.2rem;
+      }
+
+      .stage {
+        min-height: 3.5rem;
+        display: flex;
+        align-items: center;
+      }
+
+      /* ---- case 01: buttons ---- */
+      .l-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+      }
+
+      .l-btn {
+        font: inherit;
+        font-size: 0.95rem;
+        color: var(--ink);
+        background: transparent;
+        border: 1px solid var(--ink);
+        padding: 0.65rem 1.5rem;
+        border-radius: 999px 999px 999px 4px;
+        cursor: pointer;
+        transition:
+          border-radius 0.45s cubic-bezier(0.7, 0, 0.2, 1),
+          background 0.3s,
+          color 0.3s,
+          transform 0.3s;
+      }
+
+      .l-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .l-btn[data-active="true"] {
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 999px 4px 999px 999px;
+      }
+
+      /* ---- case 02: dropdown ---- */
+      .l-select {
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 300;
+        color: var(--ink);
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--ink);
+        padding: 0.5rem 2.2rem 0.5rem 0.2rem;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='M2 4 Q7 12 12 4' fill='none' stroke='%23101010' stroke-width='1.2'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.3rem center;
+        border-radius: 0;
+      }
+
+      .l-select:focus {
+        outline: none;
+        border-bottom-width: 2px;
+      }
+
+      /* ---- case 03: custom ---- */
+      .c-row {
+        display: flex;
+        gap: 1.1rem;
+        align-items: center;
+      }
+
+      .c-dot {
+        font: inherit;
+        width: 3.4rem;
+        height: 3.4rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        background: transparent;
+        border: 1px solid var(--grey);
+        border-radius: 50% 50% 50% 8%;
+        cursor: pointer;
+        transition:
+          transform 0.45s cubic-bezier(0.7, 0, 0.2, 1),
+          border-color 0.3s,
+          border-radius 0.45s cubic-bezier(0.7, 0, 0.2, 1);
+      }
+
+      .c-dot.on {
+        border-color: var(--ink);
+        border-width: 2px;
+        transform: scale(1.18) rotate(-8deg);
+        border-radius: 50%;
+      }
+
+      .c-name {
+        font-size: 0.95rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        min-width: 8ch;
+      }
+
+      /* ---- cookie readout ---- */
+      .cookie {
+        position: fixed;
+        left: clamp(1rem, 4vw, 3rem);
+        bottom: 1.2rem;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.75rem;
+        color: #666;
+        z-index: 2;
+        background: var(--paper);
+        padding: 0.3rem 0.5rem;
+      }
+
+      .cookie b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* ---- footer ---- */
+      footer {
+        border-top: 1px solid var(--ink);
+        padding-top: 2rem;
+        display: flex;
+        gap: 2.5rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      footer a {
+        color: var(--ink);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.3s;
+      }
+
+      footer a:hover {
+        border-color: var(--ink);
+      }
+
+      @media (max-width: 560px) {
+        section {
+          grid-template-columns: 1fr;
+        }
+        .num {
+          margin-bottom: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="flow" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="#101010">
+        <path d="M-100 780 C 300 700, 500 300, 780 260 S 1300 380, 1560 120" stroke-width="1" opacity="0.22" />
+        <path d="M-100 820 C 320 740, 540 340, 820 300 S 1320 420, 1560 160" stroke-width="1" opacity="0.16" />
+        <path d="M-100 870 C 340 790, 580 390, 860 350 S 1340 470, 1560 210" stroke-width="1" opacity="0.10" />
+        <path d="M-100 930 C 360 850, 620 450, 900 410 S 1360 530, 1560 270" stroke-width="42" opacity="0.045" />
+      </g>
+    </svg>
+
+    <main>
+      <header>
+        <h1>
+          Next
+          <br />
+          <span class="outline">Language</span>
+          <br />
+          <span class="shift">Selector</span>
+        </h1>
+        <p class="tagline">
+          Unstyled, cookie-based language selector for Next.js. One component,
+          three ways to render it. <code>autoReload</code> is off on this page —
+          watch the cookie in the corner instead.
+        </p>
+      </header>
+
+      <section>
+        <div class="num" aria-hidden="true">01</div>
+        <div>
+          <h2>Buttons</h2>
+          <p class="hint">&lt;LanguageSelector locales={…} defaultLocale="en" /&gt;</p>
+          <div class="stage" id="case-buttons">
+            <noscript>Enable JavaScript to try the live selector.</noscript>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num" aria-hidden="true">02</div>
+        <div>
+          <h2>Dropdown</h2>
+          <p class="hint">&lt;LanguageSelector isDropdown /&gt;</p>
+          <div class="stage" id="case-dropdown"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num" aria-hidden="true">03</div>
+        <div>
+          <h2>Custom</h2>
+          <p class="hint">&lt;LanguageSelector renderCustom={…} /&gt;</p>
+          <div class="stage" id="case-custom"></div>
+        </div>
+      </section>
+
+      <footer>
+        <a href="https://github.com/kirilinsky/next-language-selector">GitHub</a>
+        <a href="https://www.npmjs.com/package/next-language-selector">npm</a>
+      </footer>
+    </main>
+
+    <div id="cookie-root"></div>
+
+    <script src="./main.js"></script>
+  </body>
+</html>

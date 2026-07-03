@@ -178,6 +178,57 @@ describe("locale selection", () => {
     expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", false);
   });
 
+  it("calls onChange with the selected code", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          onChange={onChange}
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("de");
+  });
+
+  it("calls onChange before setLocaleCookie (so it runs before autoReload)", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          onChange={onChange}
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(onChange.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(setLocaleCookie).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("calls onChange when selecting from the dropdown", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          isDropdown
+          onChange={onChange}
+        />,
+      );
+    });
+    await user.selectOptions(screen.getByRole("combobox"), "fr");
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("fr");
+  });
+
   it("updates data-active after clicking a different locale", async () => {
     const user = userEvent.setup();
     await act(async () => {

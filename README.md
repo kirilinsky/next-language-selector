@@ -9,12 +9,15 @@
 A lightweight, unstyled language selector for Next.js (App Router & Pages Router).  
 Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution.
 
+**[Live demo →](https://kirilinsky.github.io/next-language-selector/)**
+
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
 - [Styling](#styling)
 - [Custom UI](#custom-ui)
 - [Dropdown mode](#dropdown-mode)
 - [Setup with next-intl](#setup-with-next-intl)
+- [Without full reloads](#without-full-reloads)
 - [Props](#props)
 - [`setLocaleCookie` utility](#setlocalecookie-utility)
 - [SSR & hydration](#ssr--hydration)
@@ -152,15 +155,41 @@ export default createMiddleware({
 });
 ```
 
+## Without full reloads
+
+By default the page reloads after a locale change so the server picks up the new cookie. For a smoother UX combine `autoReload={false}` with the `onChange` callback and the Next.js router:
+
+```tsx
+"use client";
+
+import { useRouter } from "next/navigation";
+import { LanguageSelector } from "next-language-selector";
+
+export function LocaleSwitch() {
+  const router = useRouter();
+  return (
+    <LanguageSelector
+      locales={locales}
+      defaultLocale="en"
+      autoReload={false}
+      onChange={() => router.refresh()}
+    />
+  );
+}
+```
+
+`onChange` fires with the selected code before the cookie is written (and before the reload when `autoReload` is on) — also handy for analytics.
+
 ## Props
 
-| Prop            | Type             | Default        | Description                                          |
-| :-------------- | :--------------- | :------------- | :--------------------------------------------------- |
-| `locales`       | `LocaleConfig[]` | **Required**   | Array of `{ name, code, flag? }` objects             |
-| `defaultLocale` | `string`         | **Required**   | Fallback locale code                                 |
-| `isDropdown`    | `boolean`        | `false`        | Render as `<select>` instead of buttons              |
-| `autoReload`    | `boolean`        | `true`         | Reload page after cookie change                      |
-| `cookieName`    | `string`         | `NEXT_LOCALE`  | Cookie name to store the selected locale             |
+| Prop            | Type                     | Default        | Description                                          |
+| :-------------- | :----------------------- | :------------- | :--------------------------------------------------- |
+| `locales`       | `LocaleConfig[]`         | **Required**   | Array of `{ name, code, flag? }` objects             |
+| `defaultLocale` | `string`                 | **Required**   | Fallback locale code                                 |
+| `isDropdown`    | `boolean`                | `false`        | Render as `<select>` instead of buttons              |
+| `autoReload`    | `boolean`                | `true`         | Reload page after cookie change                      |
+| `onChange`      | `(code: string) => void` | -              | Called on selection, before cookie write/reload      |
+| `cookieName`    | `string`                 | `NEXT_LOCALE`  | Cookie name to store the selected locale             |
 | `className`     | `string`         | -              | CSS class for the wrapper `<div>` or `<select>`      |
 | `itemClassName` | `string`         | -              | CSS class for each `<button>` or `<option>`          |
 | `renderCustom`  | `Function`       | -              | Render prop for fully custom UI                      |
