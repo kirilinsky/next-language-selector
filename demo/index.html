@@ -160,11 +160,49 @@
         margin-bottom: 0.6rem;
       }
 
-      .hint {
+      .install {
+        margin-top: 1.6rem;
         font-family: ui-monospace, "SF Mono", Menlo, monospace;
-        font-size: 0.78rem;
-        color: #777;
-        margin-bottom: 2.2rem;
+        font-size: 0.8rem;
+        color: #555;
+      }
+
+      .install::before {
+        content: "$ ";
+        color: var(--grey);
+      }
+
+      .code {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.8rem;
+        line-height: 1.7;
+        color: #444;
+        border-left: 1px solid var(--ink);
+        padding: 0.4rem 0 0.4rem 1.2rem;
+        margin: 0 0 2.4rem;
+        overflow-x: auto;
+      }
+
+      .tk-t {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .tk-a {
+        color: #8a8680;
+      }
+
+      .tk-s {
+        color: #a05c3b;
+      }
+
+      .tk-p {
+        color: var(--grey);
+      }
+
+      .tk-k {
+        color: #555;
+        font-style: italic;
       }
 
       .stage {
@@ -203,7 +241,6 @@
       .l-btn[data-active="true"] {
         background: var(--ink);
         color: var(--paper);
-        border-radius: 999px 4px 999px 999px;
       }
 
       /* ---- case 02: dropdown ---- */
@@ -343,13 +380,18 @@
           three ways to render it. <code>autoReload</code> is off on this page —
           watch the cookie in the corner instead.
         </p>
+        <p class="install">pnpm add next-language-selector</p>
       </header>
 
       <section>
         <div class="num" aria-hidden="true">01</div>
         <div>
           <h2>Buttons</h2>
-          <p class="hint">&lt;LanguageSelector locales={…} defaultLocale="en" /&gt;</p>
+          <pre class="code"><code><span class="tk-p">&lt;</span><span class="tk-t">LanguageSelector</span>
+  <span class="tk-a">locales</span><span class="tk-p">={</span><span class="tk-k">locales</span><span class="tk-p">}</span>
+  <span class="tk-a">defaultLocale</span><span class="tk-p">=</span><span class="tk-s">"en"</span>
+  <span class="tk-a">itemClassName</span><span class="tk-p">=</span><span class="tk-s">"pill"</span>
+<span class="tk-p">/&gt;</span></code></pre>
           <div class="stage" id="case-buttons">
             <noscript>Enable JavaScript to try the live selector.</noscript>
           </div>
@@ -360,7 +402,7 @@
         <div class="num" aria-hidden="true">02</div>
         <div>
           <h2>Dropdown</h2>
-          <p class="hint">&lt;LanguageSelector isDropdown /&gt;</p>
+          <pre class="code"><code><span class="tk-p">&lt;</span><span class="tk-t">LanguageSelector</span> <span class="tk-a">isDropdown</span> <span class="tk-a">className</span><span class="tk-p">=</span><span class="tk-s">"underline"</span> <span class="tk-p">/&gt;</span></code></pre>
           <div class="stage" id="case-dropdown"></div>
         </div>
       </section>
@@ -369,7 +411,11 @@
         <div class="num" aria-hidden="true">03</div>
         <div>
           <h2>Custom</h2>
-          <p class="hint">&lt;LanguageSelector renderCustom={…} /&gt;</p>
+          <pre class="code"><code><span class="tk-p">&lt;</span><span class="tk-t">LanguageSelector</span>
+  <span class="tk-a">renderCustom</span><span class="tk-p">={(</span><span class="tk-p">{</span> <span class="tk-k">locales</span><span class="tk-p">,</span> <span class="tk-k">currentLocale</span><span class="tk-p">,</span> <span class="tk-k">onChange</span> <span class="tk-p">})</span> <span class="tk-k">=&gt;</span> <span class="tk-p">(</span>
+    <span class="tk-k">/* your UI */</span>
+  <span class="tk-p">)}</span>
+<span class="tk-p">/&gt;</span></code></pre>
           <div class="stage" id="case-custom"></div>
         </div>
       </section>
