@@ -1,5 +1,61 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setLocaleCookie } from "../utils";
+import { getLocaleCookie, setLocaleCookie } from "../utils";
+
+describe("getLocaleCookie", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const mockCookie = (value: string) =>
+    vi.spyOn(document, "cookie", "get").mockReturnValue(value);
+
+  it("reads the locale value", () => {
+    mockCookie("NEXT_LOCALE=de");
+    expect(getLocaleCookie()).toBe("de");
+  });
+
+  it("returns null when the cookie is missing", () => {
+    mockCookie("other=1");
+    expect(getLocaleCookie()).toBeNull();
+  });
+
+  it("parses cookie strings without a space after the separator", () => {
+    mockCookie("other=1;NEXT_LOCALE=fr");
+    expect(getLocaleCookie()).toBe("fr");
+  });
+
+  it("decodes percent-encoded values", () => {
+    mockCookie(`NEXT_LOCALE=${encodeURIComponent("pt-BR")}`);
+    expect(getLocaleCookie()).toBe("pt-BR");
+  });
+
+  it("returns null instead of throwing on malformed percent-encoding", () => {
+    mockCookie("NEXT_LOCALE=%E0%A4%A");
+    expect(() => getLocaleCookie()).not.toThrow();
+    expect(getLocaleCookie()).toBeNull();
+  });
+
+  it("keeps = characters inside the value", () => {
+    mockCookie("NEXT_LOCALE=abc=def");
+    expect(getLocaleCookie()).toBe("abc=def");
+  });
+
+  it("reads a custom cookie name", () => {
+    mockCookie("MY_LOCALE=fr; NEXT_LOCALE=en");
+    expect(getLocaleCookie("MY_LOCALE")).toBe("fr");
+  });
+
+  it("does not match a cookie whose name only shares a prefix", () => {
+    mockCookie("NEXT_LOCALE_EXT=de; NEXT_LOCALE=en");
+    expect(getLocaleCookie()).toBe("en");
+  });
+
+  it("returns null when document is undefined (SSR)", () => {
+    vi.stubGlobal("document", undefined);
+    expect(getLocaleCookie()).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});
 
 describe("setLocaleCookie", () => {
   let writtenCookie = "";

@@ -9,6 +9,16 @@
 A lightweight, unstyled language selector for Next.js (App Router & Pages Router).  
 Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution.
 
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Styling](#styling)
+- [Custom UI](#custom-ui)
+- [Dropdown mode](#dropdown-mode)
+- [Setup with next-intl](#setup-with-next-intl)
+- [Props](#props)
+- [`setLocaleCookie` utility](#setlocalecookie-utility)
+- [SSR & hydration](#ssr--hydration)
+
 ## Key Features
 
 - **Next.js Native**: Built for the Next.js ecosystem (App Router & Pages Router).
@@ -164,6 +174,26 @@ interface LocaleConfig {
   flag?: string;  // Optional emoji flag, e.g. "🇺🇸"
 }
 ```
+
+## `setLocaleCookie` utility
+
+The cookie writer is exported separately — useful if you want to switch the locale from your own code (a settings page, a keyboard shortcut, etc.) without rendering the component:
+
+```ts
+import { setLocaleCookie } from "next-language-selector";
+
+// setLocaleCookie(locale, cookieName?, autoReload?)
+setLocaleCookie("de");                        // sets NEXT_LOCALE=de and reloads
+setLocaleCookie("de", "MY_LOCALE", false);    // custom cookie, no reload
+```
+
+The name and value are URI-encoded (cookie-injection safe), written with `max-age=31536000; path=/; SameSite=Lax`. On the server it is a no-op.
+
+## SSR & hydration
+
+The component renders `null` until it has mounted and read the cookie on the client, so server and client markup never mismatch. Expect the selector to appear only after hydration — reserve space with CSS if layout shift matters. Malformed or unknown cookie values are ignored and `defaultLocale` is used.
+
+Buttons are rendered with `type="button"`, so placing the selector inside a `<form>` won't trigger submits.
 
 ## License
 

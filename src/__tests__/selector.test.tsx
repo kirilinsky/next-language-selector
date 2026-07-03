@@ -1,12 +1,12 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageSelector } from "../selector";
 
-vi.mock("../utils", () => ({
-  setLocaleCookie: vi.fn(),
-}));
+vi.mock("../utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../utils")>();
+  return { ...actual, setLocaleCookie: vi.fn() };
+});
 
 import { setLocaleCookie } from "../utils";
 
@@ -38,7 +38,7 @@ afterEach(() => {
  
 
 describe("locale initialisation", () => {
-  it("renders nothing before mounted (SSR hydration guard)", () => {
+  it("renders content once mounted (after hydration guard releases)", () => {
      let container!: HTMLElement;
     act(() => {
       ({ container } = render(
@@ -46,6 +46,16 @@ describe("locale initialisation", () => {
       ));
     });
      expect(container.firstChild).not.toBeNull();
+  });
+
+  it("falls back to defaultLocale when cookie value is malformed", async () => {
+    vi.spyOn(document, "cookie", "get").mockReturnValue("NEXT_LOCALE=%E0%A4%A");
+    await act(async () => {
+      render(<LanguageSelector locales={locales} defaultLocale="de" />);
+    });
+    expect(
+      screen.getByRole("button", { name: /deutsch/i }),
+    ).toHaveAttribute("data-active", "true");
   });
 
   it("falls back to defaultLocale when no cookie is set", async () => {
@@ -190,6 +200,15 @@ describe("button mode (default)", () => {
       render(<LanguageSelector locales={locales} defaultLocale="en" />);
     });
     expect(screen.getAllByRole("button")).toHaveLength(locales.length);
+  });
+
+  it("renders buttons with type=button so they never submit a parent form", async () => {
+    await act(async () => {
+      render(<LanguageSelector locales={locales} defaultLocale="en" />);
+    });
+    screen
+      .getAllByRole("button")
+      .forEach((btn) => expect(btn).toHaveAttribute("type", "button"));
   });
 
   it("applies itemClassName to each button", async () => {

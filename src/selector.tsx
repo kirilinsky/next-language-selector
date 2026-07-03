@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { LanguageSelectorProps } from "./types";
-import { setLocaleCookie } from "./utils";
+import { getLocaleCookie, setLocaleCookie } from "./utils";
 
 export function LanguageSelector(
   props: LanguageSelectorProps,
@@ -22,13 +22,7 @@ export function LanguageSelector(
   const [current, setCurrent] = useState(defaultLocale);
 
   useEffect(() => {
-    const safeKey = encodeURIComponent(cookieName);
-    const raw = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${safeKey}=`));
-    const saved = raw
-      ? decodeURIComponent(raw.split("=").slice(1).join("="))
-      : null;
+    const saved = getLocaleCookie(cookieName);
 
     if (saved && locales.some((locale) => locale.code === saved)) {
       setCurrent(saved);
@@ -66,6 +60,7 @@ export function LanguageSelector(
         {locales.map((l) => (
           <button
             key={l.code}
+            type="button"
             onClick={() => handleSelect(l.code)}
             data-active={current === l.code}
             aria-pressed={current === l.code}

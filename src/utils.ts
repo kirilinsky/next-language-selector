@@ -1,3 +1,23 @@
+export const getLocaleCookie = (
+  cookieName: string = "NEXT_LOCALE",
+): string | null => {
+  if (typeof document === "undefined") return null;
+
+  const safeKey = encodeURIComponent(cookieName);
+  const raw = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((row) => row.startsWith(`${safeKey}=`));
+  if (!raw) return null;
+
+  try {
+    return decodeURIComponent(raw.slice(safeKey.length + 1));
+  } catch {
+    // malformed percent-encoding in the cookie value
+    return null;
+  }
+};
+
 export const setLocaleCookie = (
   locale: string,
   cookieName: string = "NEXT_LOCALE",
