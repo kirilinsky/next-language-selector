@@ -262,6 +262,15 @@ describe("button mode (default)", () => {
       .forEach((btn) => expect(btn).toHaveAttribute("type", "button"));
   });
 
+  it("does not add a leading space when a button locale has no flag", async () => {
+    await act(async () => {
+      render(<LanguageSelector locales={locales} defaultLocale="en" />);
+    });
+    expect(screen.getByRole("button", { name: /français/i }).textContent).toBe(
+      "Français",
+    );
+  });
+
   it("applies itemClassName to each button", async () => {
     await act(async () => {
       render(
@@ -325,6 +334,17 @@ describe("dropdown mode", () => {
       );
     });
     expect(screen.getAllByRole("option")).toHaveLength(locales.length);
+  });
+
+  it("does not add a leading space when an option locale has no flag", async () => {
+    await act(async () => {
+      render(
+        <LanguageSelector locales={locales} defaultLocale="en" isDropdown />,
+      );
+    });
+    expect(screen.getByRole("option", { name: /français/i }).textContent).toBe(
+      "Français",
+    );
   });
 
   it("selects the active locale by default", async () => {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+- Fixed the built-in button and dropdown labels for locales without `flag` so they no longer render a leading space.
+- Updated development test dependencies and aligned `esbuild` with Vite's peer range.
+
 ## 0.4.0 
 
 - Added optional `onChange(code)` callback — fires on selection before the cookie write/reload; use for analytics or `router.refresh()`.

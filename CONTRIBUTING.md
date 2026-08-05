@@ -4,7 +4,7 @@ Thanks for helping out. This lib exists to save time, so let's keep the process 
 
 ### 🛠 Quick Start
 
-1. **Clone & Install**: We use `pnpm`.
+1. **Clone & Install**: Use a current Node version for the dev toolchain (Node 20+), then install with `pnpm`.
 
    ```bash
    pnpm install

@@ -4,6 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { LanguageSelectorProps } from "./types";
 import { getLocaleCookie, setLocaleCookie } from "./utils";
 
+const getLocaleLabel = (locale: { flag?: string; name: string }) =>
+  locale.flag ? `${locale.flag} ${locale.name}` : locale.name;
+
 export function LanguageSelector(
   props: LanguageSelectorProps,
 ): React.JSX.Element | null {
@@ -70,7 +73,7 @@ export function LanguageSelector(
             aria-pressed={current === l.code}
             className={itemClassName}
           >
-            {l.flag} {l.name}
+            {getLocaleLabel(l)}
           </button>
         ))}
       </div>
@@ -85,7 +88,7 @@ export function LanguageSelector(
     >
       {locales.map((l) => (
         <option key={l.code} value={l.code} className={itemClassName}>
-          {l.flag} {l.name}
+          {getLocaleLabel(l)}
         </option>
       ))}
     </select>
