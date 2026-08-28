@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- **Fixed:** the selector no longer renders `null` until mount. It now produces real markup on the server and during hydration, so there is no layout shift, no post-hydration pop-in, and the control exists without JS.
+- Added `initialLocale` — pass the cookie value read on the server (`(await cookies()).get("NEXT_LOCALE")?.value`) to paint the correct locale on the first frame. The cookie read on mount still wins afterwards.
+- Added `reloadStrategy: "reload" | "none" | (code) => void` so a locale change can hand off to `router.refresh()` instead of doing a full `window.location.reload()` that discards client state, scroll and the router cache. `setLocaleCookie` accepts the same values as its third argument.
+- Deprecated `autoReload`. It still works — `autoReload={false}` maps to `reloadStrategy="none"` — and `reloadStrategy` takes precedence when both are set.
+- The cookie sync effect no longer re-runs on every render when `locales` is passed as an inline array literal.
+- Exported the `ReloadStrategy` type.
+
 ## 0.4.1
 
 - Fixed the built-in button and dropdown labels for locales without `flag` so they no longer render a leading space.

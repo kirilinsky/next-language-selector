@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { LanguageSelectorProps } from "./types";
+import { LanguageSelectorProps, ReloadStrategy } from "./types";
 import { getLocaleCookie, setLocaleCookie } from "./utils";
 
 const getLocaleLabel = (locale: { flag?: string; name: string }) =>
   locale.flag ? `${locale.flag} ${locale.name}` : locale.name;
+
+// a locale code never contains a comma, so the joined codes are a stable
+// primitive dependency for the sync effect — a `locales` array literal (the
+// documented usage) is a new reference on every render
+const CODE_SEPARATOR = ",";
 
 export function LanguageSelector(
   props: LanguageSelectorProps,
@@ -13,41 +18,47 @@ export function LanguageSelector(
   const {
     locales,
     defaultLocale,
+    initialLocale,
     cookieName = "NEXT_LOCALE",
     isDropdown = false,
     autoReload = true,
+    reloadStrategy,
     onChange,
     renderCustom,
     className,
     itemClassName,
   } = props;
 
-  const [mounted, setMounted] = useState(false);
-  const [current, setCurrent] = useState(defaultLocale);
+  // rendered on the server and during hydration; the cookie takes over on mount
+  const [current, setCurrent] = useState(initialLocale ?? defaultLocale);
+
+  const localeCodesKey = locales
+    .map((locale) => locale.code)
+    .join(CODE_SEPARATOR);
 
   useEffect(() => {
     const saved = getLocaleCookie(cookieName);
 
-    if (saved && locales.some((locale) => locale.code === saved)) {
+    if (saved && localeCodesKey.split(CODE_SEPARATOR).includes(saved)) {
       setCurrent(saved);
     } else {
-      setCurrent(defaultLocale);
+      setCurrent(initialLocale ?? defaultLocale);
     }
-    setMounted(true);
-  }, [cookieName, defaultLocale, locales]);
+  }, [cookieName, defaultLocale, initialLocale, localeCodesKey]);
 
   const handleSelect = useCallback(
     (code: string) => {
       setCurrent(code);
-      // before setLocaleCookie: with autoReload the page reloads inside it,
-      // so a callback fired later would never run
+      // before setLocaleCookie: with a reloading strategy the page navigates
+      // inside it, so a callback fired later would never run
       onChange?.(code);
-      setLocaleCookie(code, cookieName, autoReload);
-    },
-    [cookieName, autoReload, onChange],
-  );
 
-  if (!mounted) return null;
+      const strategy: ReloadStrategy =
+        reloadStrategy ?? (autoReload ? "reload" : "none");
+      setLocaleCookie(code, cookieName, strategy);
+    },
+    [cookieName, autoReload, reloadStrategy, onChange],
+  );
 
   if (renderCustom) {
     return (

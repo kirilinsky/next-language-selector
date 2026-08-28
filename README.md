@@ -6,7 +6,7 @@
 ![security score](https://socket.dev/api/badge/npm/package/next-language-selector?style=flat-square)
 ![license](https://img.shields.io/npm/l/next-language-selector?color=2E7D32&style=flat-square)
 
-A lightweight, unstyled language selector for Next.js (App Router & Pages Router).  
+A lightweight, unstyled language selector / locale switcher for Next.js (App Router & Pages Router).  
 Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution.
 
 **[Live demo →](https://kirilinsky.github.io/next-language-selector/)**
@@ -18,6 +18,7 @@ Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution
 - [Dropdown mode](#dropdown-mode)
 - [Setup with next-intl](#setup-with-next-intl)
 - [Without full reloads](#without-full-reloads)
+- [No flash on first paint](#no-flash-on-first-paint)
 - [Props](#props)
 - [`setLocaleCookie` utility](#setlocalecookie-utility)
 - [SSR & hydration](#ssr--hydration)
@@ -27,6 +28,7 @@ Manages the `NEXT_LOCALE` cookie and works with `next-intl` or any i18n solution
 - **Next.js Native**: Built for the Next.js ecosystem (App Router & Pages Router).
 - **Zero Dependencies**: No runtime deps — just React.
 - **Unstyled by default**: Bring your own CSS, Tailwind, Shadcn, Radix — no style conflicts.
+- **SSR-rendered**: Real markup on the server — no post-hydration pop-in, no layout shift.
 - **Cookie-based**: Reads and writes `NEXT_LOCALE` automatically.
 - **Secure**: Cookie injection-safe, `SameSite=Lax` out of the box.
 
@@ -157,7 +159,7 @@ export default createMiddleware({
 
 ## Without full reloads
 
-By default the page reloads after a locale change so the server picks up the new cookie. For a smoother UX combine `autoReload={false}` with the `onChange` callback and the Next.js router:
+By default the page does a full `window.location.reload()` after a locale change so the server picks up the new cookie. That throws away client state, scroll position and the router cache. Use `reloadStrategy` to hand control to the Next.js router instead:
 
 ```tsx
 "use client";
@@ -171,14 +173,50 @@ export function LocaleSwitch() {
     <LanguageSelector
       locales={locales}
       defaultLocale="en"
-      autoReload={false}
-      onChange={() => router.refresh()}
+      reloadStrategy={() => router.refresh()}
     />
   );
 }
 ```
 
-`onChange` fires with the selected code before the cookie is written (and before the reload when `autoReload` is on) — also handy for analytics.
+`reloadStrategy` accepts:
+
+| Value                    | Behaviour                                                       |
+| :----------------------- | :-------------------------------------------------------------- |
+| `"reload"` (default)     | Full `window.location.reload()`                                  |
+| `"none"`                 | Nothing — the cookie is written, you re-render yourself          |
+| `(code: string) => void` | Called with the selected code, e.g. `router.refresh()`           |
+
+The package never imports `next/navigation` itself, so it stays zero-dependency and works in the Pages Router too — pass the callback from your own client component.
+
+`onChange` fires with the selected code before the cookie is written (and before the strategy runs) — handy for analytics.
+
+> `autoReload` is deprecated as of 0.5.0. `autoReload={false}` still works and maps to `reloadStrategy="none"`; `reloadStrategy` wins when both are set.
+
+## No flash on first paint
+
+The selector renders `defaultLocale` on the server and switches to the cookie value after mount. If the visitor's cookie differs, that first paint shows the wrong locale for a frame. Read the cookie server-side and pass it as `initialLocale` to render the right one immediately:
+
+```tsx
+// app/layout.tsx — a Server Component
+import { cookies } from "next/headers";
+import { LocaleSwitch } from "./locale-switch";
+
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const initialLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+
+  return (
+    <html>
+      <body>
+        <LocaleSwitch initialLocale={initialLocale} />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+The cookie read on mount still wins afterwards, so the value stays correct if it changed in another tab.
 
 ## Props
 
@@ -186,8 +224,10 @@ export function LocaleSwitch() {
 | :-------------- | :----------------------- | :------------- | :--------------------------------------------------- |
 | `locales`       | `LocaleConfig[]`         | **Required**   | Array of `{ name, code, flag? }` objects             |
 | `defaultLocale` | `string`                 | **Required**   | Fallback locale code                                 |
+| `initialLocale` | `string`                 | `defaultLocale`| Locale rendered on the server and during hydration   |
 | `isDropdown`    | `boolean`                | `false`        | Render as `<select>` instead of buttons              |
-| `autoReload`    | `boolean`                | `true`         | Reload page after cookie change                      |
+| `reloadStrategy`| `"reload" \| "none" \| (code) => void` | `"reload"` | What happens after the cookie is written |
+| `autoReload`    | `boolean`                | `true`         | **Deprecated** — use `reloadStrategy`                 |
 | `onChange`      | `(code: string) => void` | -              | Called on selection, before cookie write/reload      |
 | `cookieName`    | `string`                 | `NEXT_LOCALE`  | Cookie name to store the selected locale             |
 | `className`     | `string`         | -              | CSS class for the wrapper `<div>` or `<select>`      |
@@ -211,16 +251,22 @@ The cookie writer is exported separately — useful if you want to switch the lo
 ```ts
 import { setLocaleCookie } from "next-language-selector";
 
-// setLocaleCookie(locale, cookieName?, autoReload?)
-setLocaleCookie("de");                        // sets NEXT_LOCALE=de and reloads
-setLocaleCookie("de", "MY_LOCALE", false);    // custom cookie, no reload
+// setLocaleCookie(locale, cookieName?, reloadStrategy?)
+setLocaleCookie("de");                             // sets NEXT_LOCALE=de and reloads
+setLocaleCookie("de", "MY_LOCALE", "none");        // custom cookie, no reload
+setLocaleCookie("de", "NEXT_LOCALE", router.refresh); // hand off to the router
+setLocaleCookie("de", "MY_LOCALE", false);         // deprecated boolean form, still works
 ```
 
 The name and value are URI-encoded (cookie-injection safe), written with `max-age=31536000; path=/; SameSite=Lax`. On the server it is a no-op.
 
 ## SSR & hydration
 
-The component renders `null` until it has mounted and read the cookie on the client, so server and client markup never mismatch. Expect the selector to appear only after hydration — reserve space with CSS if layout shift matters. Malformed or unknown cookie values are ignored and `defaultLocale` is used.
+The component renders real markup on the server, using `initialLocale ?? defaultLocale`. The first client render uses the same value, so hydration always matches; the cookie is read in an effect right after mount and updates the active locale if it differs.
+
+Pass [`initialLocale`](#no-flash-on-first-paint) to avoid that one-frame correction entirely. Malformed or unknown cookie values are ignored and the initial locale is kept.
+
+> Before 0.5.0 the component returned `null` until mount, which caused a layout shift and left the selector missing without JS. If you reserved space with CSS to work around that, you can drop it.
 
 Buttons are rendered with `type="button"`, so placing the selector inside a `<form>` won't trigger submits.
 

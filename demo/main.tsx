@@ -38,7 +38,7 @@ mount(
   <LanguageSelector
     locales={locales}
     defaultLocale="en"
-    autoReload={false}
+    reloadStrategy="none"
     className="l-row"
     itemClassName="l-btn"
   />,
@@ -49,7 +49,7 @@ mount(
   <LanguageSelector
     locales={locales}
     defaultLocale="en"
-    autoReload={false}
+    reloadStrategy="none"
     isDropdown
     className="l-select"
   />,
@@ -60,7 +60,7 @@ mount(
   <LanguageSelector
     locales={locales}
     defaultLocale="en"
-    autoReload={false}
+    reloadStrategy="none"
     renderCustom={({ locales, currentLocale, onChange }) => (
       <div className="c-row">
         {locales.map((l) => (

@@ -130,3 +130,48 @@ describe("setLocaleCookie", () => {
     expect(writtenCookie).toMatch(/^NEXT_LOCALE=en/);
   });
 });
+
+describe("setLocaleCookie reload strategies", () => {
+  let reload: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reloads on the default (legacy true)", () => {
+    setLocaleCookie("de", "NEXT_LOCALE");
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it("reloads on the \"reload\" strategy", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "reload");
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it("does not reload on the \"none\" strategy", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "none");
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does not reload on legacy false", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("calls a strategy callback with the locale code instead of reloading", () => {
+    const strategy = vi.fn();
+    setLocaleCookie("de", "NEXT_LOCALE", strategy);
+    expect(strategy).toHaveBeenCalledExactlyOnceWith("de");
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("still writes the cookie when the strategy is a callback", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", () => {});
+    expect(document.cookie).toContain("NEXT_LOCALE=de");
+  });
+});

@@ -38,14 +38,75 @@ afterEach(() => {
  
 
 describe("locale initialisation", () => {
-  it("renders content once mounted (after hydration guard releases)", () => {
-     let container!: HTMLElement;
-    act(() => {
-      ({ container } = render(
-        <LanguageSelector locales={locales} defaultLocale="en" />,
-      ));
+  it("renders on the first pass, before any effect runs", () => {
+    const { container } = render(
+      <LanguageSelector locales={locales} defaultLocale="en" />,
+    );
+    expect(container.firstChild).not.toBeNull();
+    expect(container.querySelectorAll("button")).toHaveLength(locales.length);
+  });
+
+  it("renders initialLocale as active before the cookie is read", () => {
+    const { container } = render(
+      <LanguageSelector
+        locales={locales}
+        defaultLocale="en"
+        initialLocale="de"
+      />,
+    );
+    expect(
+      container.querySelector('[data-active="true"]')?.textContent,
+    ).toContain("Deutsch");
+  });
+
+  it("keeps initialLocale after mount when no cookie is set", async () => {
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          initialLocale="de"
+        />,
+      );
     });
-     expect(container.firstChild).not.toBeNull();
+    expect(screen.getByRole("button", { name: /deutsch/i })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  });
+
+  it("lets the cookie win over initialLocale after mount", async () => {
+    setCookie("NEXT_LOCALE", "fr");
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          initialLocale="de"
+        />,
+      );
+    });
+    expect(screen.getByRole("button", { name: /fran/i })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  });
+
+  it("falls back to initialLocale when the cookie locale is unsupported", async () => {
+    setCookie("NEXT_LOCALE", "es");
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          initialLocale="de"
+        />,
+      );
+    });
+    expect(screen.getByRole("button", { name: /deutsch/i })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
   });
 
   it("falls back to defaultLocale when cookie value is malformed", async () => {
@@ -160,10 +221,10 @@ describe("locale selection", () => {
       render(<LanguageSelector locales={locales} defaultLocale="en" />);
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", true);
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload");
   });
 
-  it("passes autoReload=false to setLocaleCookie", async () => {
+  it("maps the deprecated autoReload={false} to the \"none\" strategy", async () => {
     const user = userEvent.setup();
     await act(async () => {
       render(
@@ -175,7 +236,7 @@ describe("locale selection", () => {
       );
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", false);
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none");
   });
 
   it("calls onChange with the selected code", async () => {
@@ -194,7 +255,7 @@ describe("locale selection", () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith("de");
   });
 
-  it("calls onChange before setLocaleCookie (so it runs before autoReload)", async () => {
+  it("calls onChange before setLocaleCookie (so it runs before the reload)", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     await act(async () => {
@@ -227,6 +288,53 @@ describe("locale selection", () => {
     });
     await user.selectOptions(screen.getByRole("combobox"), "fr");
     expect(onChange).toHaveBeenCalledExactlyOnceWith("fr");
+  });
+
+  it("passes an explicit reloadStrategy through to setLocaleCookie", async () => {
+    const user = userEvent.setup();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          reloadStrategy="none"
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none");
+  });
+
+  it("passes a reloadStrategy callback through to setLocaleCookie", async () => {
+    const user = userEvent.setup();
+    const refresh = vi.fn();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          reloadStrategy={refresh}
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", refresh);
+  });
+
+  it("prefers reloadStrategy over the deprecated autoReload", async () => {
+    const user = userEvent.setup();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          autoReload={false}
+          reloadStrategy="reload"
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload");
   });
 
   it("updates data-active after clicking a different locale", async () => {
@@ -365,7 +473,7 @@ describe("dropdown mode", () => {
       );
     });
     await user.selectOptions(screen.getByRole("combobox"), "fr");
-    expect(setLocaleCookie).toHaveBeenCalledWith("fr", "NEXT_LOCALE", true);
+    expect(setLocaleCookie).toHaveBeenCalledWith("fr", "NEXT_LOCALE", "reload");
   });
 });
 
