@@ -1,4 +1,4 @@
-import type { ReloadStrategy } from "./types";
+import type { CookieOptions, ReloadStrategy } from "./types";
 
 export const getLocaleCookie = (
   cookieName: string = "NEXT_LOCALE",
@@ -29,12 +29,25 @@ export const setLocaleCookie = (
    * backwards compatibility with the pre-0.5 `autoReload` argument.
    */
   reload: boolean | ReloadStrategy = true,
+  options: CookieOptions = {},
 ) => {
   if (typeof document === "undefined") return;
 
+  const {
+    maxAge = 31536000,
+    path = "/",
+    domain,
+    sameSite = "Lax",
+    secure = sameSite === "None",
+  } = options;
+
   const safeKey = encodeURIComponent(cookieName);
   const safeValue = encodeURIComponent(locale);
-  document.cookie = `${safeKey}=${safeValue}; max-age=31536000; path=/; SameSite=Lax`;
+  const parts = [`${safeKey}=${safeValue}`, `max-age=${maxAge}`, `path=${path}`];
+  if (domain) parts.push(`domain=${domain}`);
+  parts.push(`SameSite=${sameSite}`);
+  if (secure) parts.push("Secure");
+  document.cookie = parts.join("; ");
 
   if (typeof reload === "function") {
     reload(locale);

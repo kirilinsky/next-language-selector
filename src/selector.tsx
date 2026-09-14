@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { LanguageSelectorProps, ReloadStrategy } from "./types";
+import type { LanguageSelectorProps, ReloadStrategy } from "./types";
 import { getLocaleCookie, setLocaleCookie } from "./utils";
 
 const getLocaleLabel = (locale: { flag?: string; name: string }) =>
@@ -12,6 +12,15 @@ const getLocaleLabel = (locale: { flag?: string; name: string }) =>
 // documented usage) is a new reference on every render
 const CODE_SEPARATOR = ",";
 
+// bundlers replace `process.env.NODE_ENV` with a literal, so this folds to
+// `false` and the warnings are dropped from production builds
+const isDev = () =>
+  typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+
+const warn = (message: string) => {
+  if (isDev()) console.warn(`[next-language-selector] ${message}`);
+};
+
 export function LanguageSelector(
   props: LanguageSelectorProps,
 ): React.JSX.Element | null {
@@ -20,6 +29,7 @@ export function LanguageSelector(
     defaultLocale,
     initialLocale,
     cookieName = "NEXT_LOCALE",
+    cookieOptions,
     isDropdown = false,
     autoReload = true,
     reloadStrategy,
@@ -27,6 +37,7 @@ export function LanguageSelector(
     renderCustom,
     className,
     itemClassName,
+    "aria-label": ariaLabel,
   } = props;
 
   // rendered on the server and during hydration; the cookie takes over on mount
@@ -37,9 +48,22 @@ export function LanguageSelector(
     .join(CODE_SEPARATOR);
 
   useEffect(() => {
+    const codes = localeCodesKey.split(CODE_SEPARATOR);
+
+    if (!codes.includes(defaultLocale)) {
+      warn(
+        `defaultLocale "${defaultLocale}" is not in locales (${codes.join(", ")}); nothing will be marked active.`,
+      );
+    }
+    if (initialLocale !== undefined && !codes.includes(initialLocale)) {
+      warn(
+        `initialLocale "${initialLocale}" is not in locales (${codes.join(", ")}); nothing will be marked active.`,
+      );
+    }
+
     const saved = getLocaleCookie(cookieName);
 
-    if (saved && localeCodesKey.split(CODE_SEPARATOR).includes(saved)) {
+    if (saved && codes.includes(saved)) {
       setCurrent(saved);
     } else {
       setCurrent(initialLocale ?? defaultLocale);
@@ -48,6 +72,18 @@ export function LanguageSelector(
 
   const handleSelect = useCallback(
     (code: string) => {
+      if (!localeCodesKey.split(CODE_SEPARATOR).includes(code)) {
+        warn(`ignoring unknown locale "${code}"; it is not in locales.`);
+        return;
+      }
+
+      // re-selecting the active locale: make sure the cookie exists, but
+      // don't fire onChange or throw the page away with a reload
+      if (code === current) {
+        setLocaleCookie(code, cookieName, "none", cookieOptions);
+        return;
+      }
+
       setCurrent(code);
       // before setLocaleCookie: with a reloading strategy the page navigates
       // inside it, so a callback fired later would never run
@@ -55,9 +91,17 @@ export function LanguageSelector(
 
       const strategy: ReloadStrategy =
         reloadStrategy ?? (autoReload ? "reload" : "none");
-      setLocaleCookie(code, cookieName, strategy);
+      setLocaleCookie(code, cookieName, strategy, cookieOptions);
     },
-    [cookieName, autoReload, reloadStrategy, onChange],
+    [
+      localeCodesKey,
+      current,
+      cookieName,
+      cookieOptions,
+      autoReload,
+      reloadStrategy,
+      onChange,
+    ],
   );
 
   if (renderCustom) {
@@ -74,7 +118,7 @@ export function LanguageSelector(
 
   if (!isDropdown) {
     return (
-      <div className={className}>
+      <div role="group" aria-label={ariaLabel} className={className}>
         {locales.map((l) => (
           <button
             key={l.code}
@@ -95,6 +139,7 @@ export function LanguageSelector(
     <select
       value={current}
       onChange={(e) => handleSelect(e.target.value)}
+      aria-label={ariaLabel}
       className={className}
     >
       {locales.map((l) => (

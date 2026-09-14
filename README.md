@@ -157,6 +157,27 @@ export default createMiddleware({
 });
 ```
 
+> **Prefix-based routing.** If your URLs carry the locale (`/de/about`), the
+> middleware only consults the cookie when a request has *no* prefix. Writing
+> the cookie and reloading `/de/about` keeps you on `/de/about`. Navigate to
+> the new prefix instead of reloading:
+>
+> ```tsx
+> const router = useRouter();
+> const pathname = usePathname(); // e.g. "/de/about"
+>
+> <LanguageSelector
+>   locales={locales}
+>   defaultLocale="en"
+>   reloadStrategy={(code) =>
+>     router.replace(pathname.replace(/^\/[a-z]{2}(?=\/|$)/, `/${code}`))
+>   }
+> />
+> ```
+>
+> The default cookie-plus-reload flow suits `localePrefix: "never"` and any
+> other setup where the locale is resolved from the cookie alone.
+
 ## Without full reloads
 
 By default the page does a full `window.location.reload()` after a locale change so the server picks up the new cookie. That throws away client state, scroll position and the router cache. Use `reloadStrategy` to hand control to the Next.js router instead:
@@ -167,12 +188,13 @@ By default the page does a full `window.location.reload()` after a locale change
 import { useRouter } from "next/navigation";
 import { LanguageSelector } from "next-language-selector";
 
-export function LocaleSwitch() {
+export function LocaleSwitch({ initialLocale }: { initialLocale?: string }) {
   const router = useRouter();
   return (
     <LanguageSelector
       locales={locales}
       defaultLocale="en"
+      initialLocale={initialLocale}
       reloadStrategy={() => router.refresh()}
     />
   );
@@ -190,6 +212,8 @@ export function LocaleSwitch() {
 The package never imports `next/navigation` itself, so it stays zero-dependency and works in the Pages Router too — pass the callback from your own client component.
 
 `onChange` fires with the selected code before the cookie is written (and before the strategy runs) — handy for analytics.
+
+Selecting the locale that is already active writes the cookie (in case it was missing) but skips both `onChange` and the reload strategy, so a stray click never throws the page away.
 
 > `autoReload` is deprecated as of 0.5.0. `autoReload={false}` still works and maps to `reloadStrategy="none"`; `reloadStrategy` wins when both are set.
 
@@ -230,6 +254,8 @@ The cookie read on mount still wins afterwards, so the value stays correct if it
 | `autoReload`    | `boolean`                | `true`         | **Deprecated** — use `reloadStrategy`                 |
 | `onChange`      | `(code: string) => void` | -              | Called on selection, before cookie write/reload      |
 | `cookieName`    | `string`                 | `NEXT_LOCALE`  | Cookie name to store the selected locale             |
+| `cookieOptions` | `CookieOptions`          | see below      | `maxAge`, `path`, `domain`, `sameSite`, `secure`     |
+| `aria-label`    | `string`                 | -              | Accessible name for the `<select>` / button group    |
 | `className`     | `string`         | -              | CSS class for the wrapper `<div>` or `<select>`      |
 | `itemClassName` | `string`         | -              | CSS class for each `<button>` or `<option>`          |
 | `renderCustom`  | `Function`       | -              | Render prop for fully custom UI                      |
@@ -244,6 +270,30 @@ interface LocaleConfig {
 }
 ```
 
+### `CookieOptions`
+
+```ts
+interface CookieOptions {
+  maxAge?: number;                      // seconds, default 31536000 (1 year)
+  path?: string;                        // default "/"
+  domain?: string;                      // e.g. ".example.com" to share across subdomains
+  sameSite?: "Lax" | "Strict" | "None"; // default "Lax"
+  secure?: boolean;                     // default false; forced on for sameSite "None"
+}
+```
+
+```tsx
+<LanguageSelector
+  locales={locales}
+  defaultLocale="en"
+  cookieOptions={{ domain: ".example.com", secure: true }}
+/>
+```
+
+### Validation
+
+`defaultLocale`, `initialLocale` and any code passed to the `renderCustom` `onChange` must exist in `locales`. Unknown codes from `onChange` are ignored. In development a `console.warn` explains what went wrong; production builds strip the checks.
+
 ## `setLocaleCookie` utility
 
 The cookie writer is exported separately — useful if you want to switch the locale from your own code (a settings page, a keyboard shortcut, etc.) without rendering the component:
@@ -251,14 +301,15 @@ The cookie writer is exported separately — useful if you want to switch the lo
 ```ts
 import { setLocaleCookie } from "next-language-selector";
 
-// setLocaleCookie(locale, cookieName?, reloadStrategy?)
+// setLocaleCookie(locale, cookieName?, reloadStrategy?, cookieOptions?)
 setLocaleCookie("de");                             // sets NEXT_LOCALE=de and reloads
 setLocaleCookie("de", "MY_LOCALE", "none");        // custom cookie, no reload
 setLocaleCookie("de", "NEXT_LOCALE", router.refresh); // hand off to the router
 setLocaleCookie("de", "MY_LOCALE", false);         // deprecated boolean form, still works
+setLocaleCookie("de", "NEXT_LOCALE", "none", { domain: ".example.com", secure: true });
 ```
 
-The name and value are URI-encoded (cookie-injection safe), written with `max-age=31536000; path=/; SameSite=Lax`. On the server it is a no-op.
+The name and value are URI-encoded (cookie-injection safe). Without `cookieOptions` the cookie is written with `max-age=31536000; path=/; SameSite=Lax`. On the server it is a no-op.
 
 ## SSR & hydration
 
@@ -268,7 +319,7 @@ Pass [`initialLocale`](#no-flash-on-first-paint) to avoid that one-frame correct
 
 > Before 0.5.0 the component returned `null` until mount, which caused a layout shift and left the selector missing without JS. If you reserved space with CSS to work around that, you can drop it.
 
-Buttons are rendered with `type="button"`, so placing the selector inside a `<form>` won't trigger submits.
+Buttons are rendered with `type="button"`, so placing the selector inside a `<form>` won't trigger submits. The button wrapper has `role="group"` and each button carries `aria-pressed`; pass `aria-label` to give the group (or the `<select>`) an accessible name.
 
 ## License
 

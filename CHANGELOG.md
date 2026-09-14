@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- **Fixed:** the published bundle now starts with `"use client"`. The directive lived in `selector.tsx` and was dropped by the bundler, so importing `LanguageSelector` from a Server Component crashed with `useState only works in Client Components`. The build now fails if the directive is missing.
+- **Fixed:** ESM consumers with `moduleResolution: node16` / `nodenext` now get ESM type declarations (`index.d.mts`) instead of CJS ones.
+- Added `cookieOptions` (`maxAge`, `path`, `domain`, `sameSite`, `secure`) on the component and as the fourth argument of `setLocaleCookie`. Defaults are unchanged; `SameSite=None` adds `Secure` automatically.
+- Added `aria-label`. The button wrapper now has `role="group"`; the label applies to it or to the `<select>`.
+- Selecting the already active locale writes the cookie but no longer fires `onChange` or the reload strategy.
+- Unknown codes passed to the `renderCustom` `onChange` are ignored. In development the component warns when `defaultLocale`, `initialLocale` or a selected code is not in `locales`.
+- Added a `LICENSE` file to the repository and the npm tarball.
+- README: the `LocaleSwitch` example now accepts `initialLocale`; documented why cookie + reload does not switch locale under next-intl prefix-based routing.
+
 ## 0.5.0
 
 - **Fixed:** the selector no longer renders `null` until mount. It now produces real markup on the server and during hydration, so there is no layout shift, no post-hydration pop-in, and the control exists without JS.

@@ -2,6 +2,7 @@ import React from "react";
 import { LanguageSelector as Component } from "./selector";
 import { setLocaleCookie } from "./utils";
 import type {
+  CookieOptions,
   LanguageSelectorProps,
   LocaleConfig,
   ReloadStrategy,
@@ -12,4 +13,4 @@ export const LanguageSelector: (
 ) => React.JSX.Element | null = Component;
 
 export { setLocaleCookie };
-export type { LanguageSelectorProps, LocaleConfig, ReloadStrategy };
+export type { CookieOptions, LanguageSelectorProps, LocaleConfig, ReloadStrategy };

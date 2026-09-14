@@ -175,3 +175,48 @@ describe("setLocaleCookie reload strategies", () => {
     expect(document.cookie).toContain("NEXT_LOCALE=de");
   });
 });
+
+describe("setLocaleCookie cookie options", () => {
+  let writtenCookie = "";
+
+  beforeEach(() => {
+    writtenCookie = "";
+    vi.spyOn(document, "cookie", "set").mockImplementation((val) => {
+      writtenCookie = val;
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("writes the pre-0.6 cookie exactly when no options are given", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "none");
+    expect(writtenCookie).toBe(
+      "NEXT_LOCALE=de; max-age=31536000; path=/; SameSite=Lax",
+    );
+  });
+
+  it("applies maxAge, path, domain, sameSite and secure", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "none", {
+      maxAge: 60,
+      path: "/app",
+      domain: ".example.com",
+      sameSite: "Strict",
+      secure: true,
+    });
+    expect(writtenCookie).toBe(
+      "NEXT_LOCALE=de; max-age=60; path=/app; domain=.example.com; SameSite=Strict; Secure",
+    );
+  });
+
+  it("adds Secure automatically for SameSite=None", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "none", { sameSite: "None" });
+    expect(writtenCookie).toContain("SameSite=None; Secure");
+  });
+
+  it("omits Secure by default", () => {
+    setLocaleCookie("de", "NEXT_LOCALE", "none", { sameSite: "Strict" });
+    expect(writtenCookie).not.toContain("Secure");
+  });
+});

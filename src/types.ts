@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export interface LocaleConfig {
   name: string;
@@ -16,6 +16,30 @@ export interface LocaleConfig {
  */
 export type ReloadStrategy = "reload" | "none" | ((code: string) => void);
 
+/**
+ * Attributes written with the locale cookie. Every field is optional; the
+ * defaults reproduce the pre-0.6 cookie exactly.
+ */
+export interface CookieOptions {
+  /** Lifetime in seconds. Defaults to `31536000` (one year). */
+  maxAge?: number;
+  /** Defaults to `"/"`. */
+  path?: string;
+  /**
+   * Share the cookie across subdomains, e.g. `".example.com"`. Omitted by
+   * default, which scopes the cookie to the current host.
+   */
+  domain?: string;
+  /** Defaults to `"Lax"`. */
+  sameSite?: "Lax" | "Strict" | "None";
+  /**
+   * Adds the `Secure` attribute. Defaults to `false`, except when `sameSite`
+   * is `"None"` — browsers reject `SameSite=None` without `Secure`, so it is
+   * added automatically in that case.
+   */
+  secure?: boolean;
+}
+
 export interface LanguageSelectorProps {
   locales: LocaleConfig[];
   defaultLocale: string;
@@ -28,8 +52,15 @@ export interface LanguageSelectorProps {
   initialLocale?: string;
   isDropdown?: boolean;
   cookieName?: string;
+  /** Attributes for the written cookie: `maxAge`, `path`, `domain`, `sameSite`, `secure`. */
+  cookieOptions?: CookieOptions;
   className?: string;
   itemClassName?: string;
+  /**
+   * Accessible name for the control — applied to the `<select>` in dropdown
+   * mode and to the wrapper `role="group"` in button mode.
+   */
+  "aria-label"?: string;
   /**
    * @deprecated Use `reloadStrategy` instead. `autoReload={false}` is
    * equivalent to `reloadStrategy="none"`. Ignored when `reloadStrategy` is set.
@@ -40,6 +71,7 @@ export interface LanguageSelectorProps {
   /**
    * Called with the selected locale code after the internal state updates,
    * before the cookie is written (and before the reload strategy runs).
+   * Not called when the already active locale is selected again.
    * Use for analytics, router navigation or other side effects.
    */
   onChange?: (code: string) => void;

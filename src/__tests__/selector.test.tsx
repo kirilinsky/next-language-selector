@@ -221,7 +221,7 @@ describe("locale selection", () => {
       render(<LanguageSelector locales={locales} defaultLocale="en" />);
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload");
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload", undefined);
   });
 
   it("maps the deprecated autoReload={false} to the \"none\" strategy", async () => {
@@ -236,7 +236,7 @@ describe("locale selection", () => {
       );
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none");
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none", undefined);
   });
 
   it("calls onChange with the selected code", async () => {
@@ -302,7 +302,7 @@ describe("locale selection", () => {
       );
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none");
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "none", undefined);
   });
 
   it("passes a reloadStrategy callback through to setLocaleCookie", async () => {
@@ -318,7 +318,7 @@ describe("locale selection", () => {
       );
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", refresh);
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", refresh, undefined);
   });
 
   it("prefers reloadStrategy over the deprecated autoReload", async () => {
@@ -334,7 +334,7 @@ describe("locale selection", () => {
       );
     });
     await user.click(screen.getByRole("button", { name: /deutsch/i }));
-    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload");
+    expect(setLocaleCookie).toHaveBeenCalledWith("de", "NEXT_LOCALE", "reload", undefined);
   });
 
   it("updates data-active after clicking a different locale", async () => {
@@ -473,7 +473,7 @@ describe("dropdown mode", () => {
       );
     });
     await user.selectOptions(screen.getByRole("combobox"), "fr");
-    expect(setLocaleCookie).toHaveBeenCalledWith("fr", "NEXT_LOCALE", "reload");
+    expect(setLocaleCookie).toHaveBeenCalledWith("fr", "NEXT_LOCALE", "reload", undefined);
   });
 });
 
@@ -509,5 +509,154 @@ describe("renderCustom mode", () => {
       );
     });
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+});
+
+describe("re-selecting the active locale", () => {
+  it("writes the cookie without reloading and without calling onChange", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          onChange={onChange}
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /english/i }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(setLocaleCookie).toHaveBeenCalledExactlyOnceWith(
+      "en",
+      "NEXT_LOCALE",
+      "none",
+      undefined,
+    );
+  });
+});
+
+describe("cookieOptions", () => {
+  it("passes cookieOptions through to setLocaleCookie", async () => {
+    const user = userEvent.setup();
+    const cookieOptions = { domain: ".example.com", secure: true };
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          reloadStrategy="none"
+          cookieOptions={cookieOptions}
+        />,
+      );
+    });
+    await user.click(screen.getByRole("button", { name: /deutsch/i }));
+    expect(setLocaleCookie).toHaveBeenCalledWith(
+      "de",
+      "NEXT_LOCALE",
+      "none",
+      cookieOptions,
+    );
+  });
+});
+
+describe("accessibility", () => {
+  it("renders the button group with role=group and aria-label", async () => {
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          aria-label="Language"
+        />,
+      );
+    });
+    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+  });
+
+  it("labels the select in dropdown mode", async () => {
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          isDropdown
+          aria-label="Language"
+        />,
+      );
+    });
+    expect(
+      screen.getByRole("combobox", { name: "Language" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("validation", () => {
+  it("ignores an unknown code passed through renderCustom and warns", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const onChange = vi.fn();
+    let select: (code: string) => void = () => {};
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          onChange={onChange}
+          renderCustom={({ onChange: handle, currentLocale }) => {
+            select = handle;
+            return <div data-testid="current">{currentLocale}</div>;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      select("xx");
+    });
+    expect(screen.getByTestId("current").textContent).toBe("en");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(setLocaleCookie).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('unknown locale "xx"'),
+    );
+  });
+
+  it("warns when defaultLocale is not in locales", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await act(async () => {
+      render(<LanguageSelector locales={locales} defaultLocale="xx" />);
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('defaultLocale "xx"'),
+    );
+  });
+
+  it("warns when initialLocale is not in locales", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          initialLocale="xx"
+        />,
+      );
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('initialLocale "xx"'),
+    );
+  });
+
+  it("does not warn for valid props", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await act(async () => {
+      render(
+        <LanguageSelector
+          locales={locales}
+          defaultLocale="en"
+          initialLocale="de"
+        />,
+      );
+    });
+    expect(warn).not.toHaveBeenCalled();
   });
 });
