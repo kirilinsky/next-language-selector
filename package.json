@@ -19,6 +19,7 @@
   },
   "scripts": {
     "build": "tsup && node scripts/check-dist.mjs",
+    "prepublishOnly": "npm run build",
     "dev": "tsup --watch",
     "lint": "tsc --noEmit",
     "test": "vitest",
